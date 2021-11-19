@@ -3,16 +3,23 @@
 
 typedef int Data;
 
+enum Balance {
+    DISBALANCED = -1,
+    BALANCED_XZ,
+    BALANCED,
+};
+
 struct Node {
     Data val;           // данные в узле
     int freq;
     struct Node *left;  // левый ребенок
     struct Node *right; // правый ребенок
-    int deep; //глубина дерева, где данная вершина - корень
+    int deep;           // глубина дерева, где данная вершина - корень
+    int balanced;       // сбалансированно ли дерево
 };
 struct Queue {
-    int capacity; //вместимость
-    int size;   //номер элемента, в который нужно положить
+    int capacity;   //вместимость
+    int size;       //номер элемента, в который нужно положить
     struct Node **data;
 
 };
@@ -36,14 +43,12 @@ void queue_print (struct Queue *queue);         // печатает очеред
 int main () {
     struct Node *tree = NULL;
     int x = 1;
-    scanf ("%d", &x);
-    while (x != 0) {
+    while ((scanf ("%d", &x) == 1) && x != 0) {
         tree = tree_add (tree, x);
-        scanf ("%d", &x);
     }
 
     deep (tree);
-    if (is_balanced (tree) == 1) {
+    if (is_balanced (tree) == BALANCED) {
         printf ("YES\n");
     }
     else {
@@ -58,6 +63,7 @@ struct Node *tree_add (struct Node *tree, Data x) {
         struct Node *tree = (struct Node *) calloc (1, sizeof (*tree));
         tree -> val = x;
         tree -> freq = 1;
+        tree -> balanced = BALANCED_XZ;
         return tree;
     }
 
@@ -146,7 +152,13 @@ void no_child (struct Node *tree) {
 
 int is_balanced (struct Node *tree) {
     if (!tree) {
-        return 1;
+        return BALANCED;
+    }
+    if (tree -> balanced == BALANCED) {
+        return BALANCED;
+    }
+    else if (tree -> balanced == DISBALANCED) {
+        return DISBALANCED;
     }
 
     int left = 0;
@@ -157,12 +169,13 @@ int is_balanced (struct Node *tree) {
     if (tree -> right) {
         right = tree -> right -> deep;
     }
-    if (left - right >= -1 && left - right <= 1) {
-        if (is_balanced (tree -> left) * is_balanced (tree -> right) == 1) {
-            return 1;
-        }
+
+    if (left - right >= -1 && left - right <= 1 && is_balanced (tree -> left) == BALANCED && is_balanced (tree -> right) == BALANCED) {
+        tree -> balanced = BALANCED;
+        return BALANCED;
     }
-    return 0;
+    tree -> balanced = DISBALANCED;
+    return DISBALANCED;
 }
 
 struct Queue *queue_add (struct Queue *queue, struct Node *tree) {
