@@ -8,6 +8,7 @@ struct Node {
     int freq;
     struct Node *left;  // левый ребенок
     struct Node *right; // правый ребенок
+    int deep; //глубина дерева, где данная вершина - корень
 };
 struct Queue {
     int capacity; //вместимость
@@ -16,20 +17,20 @@ struct Queue {
 
 };
 
-struct Node *tree_add (struct Node *tree, Data x);
-void tree_print (struct Node *tree);
-void tree_destroy (struct Node *tree);
-int deep (struct Node *tree);
-void no_child (struct Node *tree);
-int is_balanced (struct Node *tree);
-void tree_print_freq (struct Node *tree);
-void tree_print_width (struct Queue *queue, struct Node *tree);
-struct Queue *queue_add (struct Queue *queue, struct Node *tree);
-void queue_recopy (struct Node **oldData, struct Node **newData, int size);
-void queue_destroy (struct Queue *queue);
-void queue_top (struct Queue *queue);
-void queue_shift (struct Queue *queue);
-void queue_print (struct Queue *queue);
+struct Node *tree_add (struct Node *tree, Data x); // добавляет элемент в дерево
+void tree_print (struct Node *tree);    // печатает дерево в порядке возрастания
+void tree_destroy (struct Node *tree);  // уничтожает дерево, очищает память
+int deep (struct Node *tree);           // заполняет дерево параметрами глубины
+void no_child (struct Node *tree);      // печатает листья
+int is_balanced (struct Node *tree);    // проверяет, сдабалнированно ли дерево
+void tree_print_freq (struct Node *tree);                                   // печатает дерево с параметром частоты каждой вершины
+void tree_print_width (struct Queue *queue, struct Node *tree);             // печатает в ширину, по уровням
+struct Queue *queue_add (struct Queue *queue, struct Node *tree);           // добавляет очередь
+void queue_recopy (struct Node **oldData, struct Node **newData, int size); // перекопирует в новую очередь
+void queue_destroy (struct Queue *queue);       // уничтожает очередь, освобождает память
+void queue_top (struct Queue *queue);           // печатает и удаляет первый элемент
+void queue_shift (struct Queue *queue);         // сдвигает очередь на 1 вперед
+void queue_print (struct Queue *queue);         // печатает очередь
 
 
 int main () {
@@ -41,12 +42,13 @@ int main () {
         scanf ("%d", &x);
     }
 
-    struct Queue *queue = NULL;
-    queue = queue_add (queue, tree);
-    if (queue -> data) {
+    deep (tree);
+    if (is_balanced (tree) == 1) {
+        printf ("YES\n");
     }
-    tree_print_width (queue, tree);
-    queue_destroy (queue);
+    else {
+        printf ("NO\n");
+    }
     tree_destroy (tree);
     return 0;
 }
@@ -123,6 +125,7 @@ int deep (struct Node *tree) {
     else {
         int left = deep (tree -> left);
         int right = deep (tree -> right);
+        tree -> deep = (left > right) ? left + 1 : right + 1;
         return (left > right) ? left + 1 : right + 1;
     }
 }
@@ -145,8 +148,15 @@ int is_balanced (struct Node *tree) {
     if (!tree) {
         return 1;
     }
-    int left = deep (tree -> left);
-    int right = deep (tree -> right);
+
+    int left = 0;
+    int right = 0;
+    if (tree -> left) {
+        left = tree -> left -> deep;
+    }
+    if (tree -> right) {
+        right = tree -> right -> deep;
+    }
     if (left - right >= -1 && left - right <= 1) {
         if (is_balanced (tree -> left) * is_balanced (tree -> right) == 1) {
             return 1;
@@ -158,13 +168,14 @@ int is_balanced (struct Node *tree) {
 struct Queue *queue_add (struct Queue *queue, struct Node *tree) {
 
     if (queue == NULL) {
-        struct Queue *queue = (struct Queue *) calloc (1, sizeof (queue));
-        queue -> capacity = 4;
-        queue -> size = 0;
-        queue -> data = (struct Node **) calloc (queue -> capacity, sizeof (struct Node *));
-        (queue -> data)[0] = tree;
-        queue -> size++;
-        return queue;
+        // queue = (struct Queue *) calloc (1, sizeof (struct Queue));
+        struct Queue *queue1 = (struct Queue *) calloc (1, sizeof (*queue1));
+        queue1 -> capacity = 4;
+        queue1 -> size = 0;
+        queue1 -> data = (struct Node **) calloc (queue1 -> capacity, sizeof (struct Node *));
+        (queue1 -> data)[0] = tree;
+        queue1 -> size++;
+        return queue1;
     }
 
     if (queue -> size == queue -> capacity) {
@@ -202,7 +213,6 @@ void queue_top (struct Queue *queue) {
 }
 
 void queue_shift (struct Queue *queue) {
-    free ((queue -> data)[0]);
     for (int i = 0; i < queue -> size; i++) {
         (queue -> data)[i] = (queue -> data)[i + 1];
     }
